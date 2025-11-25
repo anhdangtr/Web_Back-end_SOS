@@ -26,8 +26,12 @@
 <<<<<<< HEAD
 =======
     "bcryptjs": "^2.4.3",
+<<<<<<< HEAD
     "cloudinary": "^2.8.0",
 >>>>>>> 19d480b0e4d7cd952e1a7d010c1c7eb9c4a174a4
+=======
+    "cloudinary": "^1.41.3",
+>>>>>>> 4d85b5223380609a2880d5953bdc6c267b5900da
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
@@ -40,6 +44,7 @@
 =======
     "mongoose": "^9.0.0",
     "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
     "nodemon": "^3.1.11",

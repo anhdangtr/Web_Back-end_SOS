@@ -1,58 +1,39 @@
+// models/User.js
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+
+const savedEventSchema = new mongoose.Schema({
+  event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  savedAt: { type: Date, default: Date.now }
+});
+
+const folderSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+  events: [savedEventSchema]
+});
+
+const interestingEventSchema = new mongoose.Schema({
+  event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  likedAt: { type: Date, default: Date.now }
+});
 
 const userSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: [true, 'Email không được để trống'],
-    unique: true,
-    lowercase: true,
-    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Email không hợp lệ']
-  },
-  password: {
-    type: String,
-    required: [true, 'Mật khẩu không được để trống'],
-    minlength: [8, 'Mật khẩu phải ít nhất 8 ký tự'],
-    select: false
-  },
-  name: {
-    type: String,
-    required: [true, 'Tên không được để trống'],
-    trim: true
-  },
-  role_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Role',
-    default: null
-  },
-  created_at: {
-    type: Date,
-    default: Date.now
-  },
-  updated_at: {
-    type: Date,
-    default: Date.now
-  }
-});
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  name: { type: String, required: true },
 
-// Hash password trước khi lưu
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    next();
-  }
+  // 🔥 Role chỉ có 2 giá trị: admin hoặc user
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
 
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-  } catch (error) {
-    next(error);
-  }
-});
+  savedFolders: [folderSchema],
+  interestingEvents: [interestingEventSchema],
 
-// Update updated_at trước khi lưu
-userSchema.pre('save', function(next) {
-  this.updated_at = Date.now();
-  next();
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('User', userSchema);

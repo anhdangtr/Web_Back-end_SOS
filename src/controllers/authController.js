@@ -1,102 +1,117 @@
 const User = require('../models/User');
-const { generateToken } = require('../utils/jwtHelper');
-const { sendSuccess, sendError } = require('../utils/responseHelper');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-// @desc    Đăng ký tài khoản
-// @route   POST /api/auth/register
+// @desc    Đăng ký người dùng mới
+// @route   POST /api/auth/signup
 // @access  Public
-exports.register = async (req, res, next) => {
+exports.signup = async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, passwordConfirm, name } = req.body;
 
     // Kiểm tra email đã tồn tại
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return sendError(res, 400, 'Email đã được sử dụng');
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email đã được sử dụng'
+      });
     }
-
+    //Hash pass
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(password, salt);
     // Tạo user mới
     const user = await User.create({
       email,
-      password,
-      name,
-      role: 'user',
+      password: hashedPassword,
+      name
     });
 
-    // Tạo token
-    const token = generateToken(user._id);
+    // Tạo token JWT
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRE
+    });
 
-    sendSuccess(res, 201, {
+    // Gửi response
+    res.status(201).json({
+      success: true,
+      message: 'Đăng ký thành công',
+      token,
       user: {
         id: user._id,
         email: user.email,
         name: user.name,
-        role: user.role,
-      },
-      token,
-    }, 'Đăng ký thành công');
+        role_id: user.role_id,
+        created_at: user.created_at
+      }
+    });
+
   } catch (error) {
-    next(error);
+    console.error('Signup error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Lỗi khi đăng ký'
+    });
   }
 };
 
-// @desc    Đăng nhập
+
+// @desc    Đăng nhập người dùng
 // @route   POST /api/auth/login
 // @access  Public
-exports.login = async (req, res, next) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Kiểm tra email và password
+    // Validate dữ liệu
     if (!email || !password) {
-      return sendError(res, 400, 'Vui lòng nhập email và mật khẩu');
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp email và mật khẩu'
+      });
     }
 
-    // Tìm user và lấy cả password
+    // Kiểm tra user tồn tại
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return sendError(res, 401, 'Email hoặc mật khẩu không đúng');
+      return res.status(401).json({
+        success: false,
+        message: 'Email hoặc mật khẩu không chính xác'
+      });
     }
 
-    // Kiểm tra password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return sendError(res, 401, 'Email hoặc mật khẩu không đúng');
+    // Kiểm tra mật khẩu
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(401).json({
+        success: false,
+        message: 'Email hoặc mật khẩu không chính xác'
+      });
     }
 
-    // Tạo token
-    const token = generateToken(user._id);
+    // Tạo token JWT
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRE
+    });
 
-    sendSuccess(res, 200, {
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
+    res.status(200).json({
+      success: true,
+      message: 'Đăng nhập thành công',
       token,
-    }, 'Đăng nhập thành công');
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Lấy thông tin user hiện tại
-// @route   GET /api/auth/me
-// @access  Private
-exports.getMe = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user.id);
-
-    sendSuccess(res, 200, {
       user: {
         id: user._id,
         email: user.email,
         name: user.name,
-        role: user.role,
-      },
-    }, 'Lấy thông tin thành công');
+        role_id: user.role_id,
+        created_at: user.created_at
+      }
+    });
+
   } catch (error) {
-    next(error);
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Lỗi khi đăng nhập'
+    });
   }
 };

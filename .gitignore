@@ -1,2 +1,45 @@
+<<<<<<< HEAD
 node_modules/
 .env/
+=======
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build
+dist/
+build/
+
+# Upload files (nếu có local storage)
+uploads/
+
+Beta
+0 / 10
+used queries
+1
+>>>>>>> 4d85b5223380609a2880d5953bdc6c267b5900da

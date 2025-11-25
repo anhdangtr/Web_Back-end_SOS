@@ -1,18 +1,9 @@
+// models/EventCategory.js
 const mongoose = require('mongoose');
 
 const eventCategorySchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Tên danh mục là bắt buộc'],
-    unique: true,
-    trim: true,
-  },
-  description: {
-    type: String,
-    trim: true,
-  },
-}, {
-  timestamps: true,
+  name: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('EventCategory', eventCategorySchema);

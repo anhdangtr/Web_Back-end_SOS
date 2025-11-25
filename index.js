@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
 const authRoutes = require('./src/routes/authRoutes');
+const eventRoutes = require('./src/routes/eventRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -15,6 +16,12 @@ if (fs.existsSync(altEnv)) {
 }
 
 const app = express();
+
+// Simple request logger to help debug missing routes
+app.use((req, res, next) => {
+  console.log(`[req] ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 // Danh sách các front-end được phép
 const allowedOrigins = [
@@ -36,6 +43,10 @@ app.use(cors({
   credentials: true
 }));
 
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 // MongoDB Connection
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
@@ -53,11 +64,19 @@ mongoose.connect(mongoUri)
     process.exit(1);
   });
 
-console.log("Kn thành công"); 
+// Authentication Routes
+app.use('/api/auth', require('./src/routes/authRoutes'));
+//Fetch all revent routes
+app.use('/api/events', eventRoutes);
+console.log("Router event oke");
 
 // Routes
-app.use('/api/auth', authRoutes);
-console.log("Router oke");
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
+//Fetch all revent routes
+app.use('/api/events', eventRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {
@@ -73,11 +92,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
+// 404 handler - include requested path for easier debugging
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route không tìm thấy'
+    message: `Route không tìm thấy: ${req.method} ${req.originalUrl}`
   });
 });
 
